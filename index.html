@@ -135,7 +135,8 @@
     // --- GitHub API ---
     async function apiGet(path) {
       const res = await fetch(`${API_BASE}${path}`, {
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' }
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' },
+        referrerPolicy: 'no-referrer'
       });
       if (!res.ok) throw new Error(`${res.status}`);
       return res.json();
@@ -145,7 +146,8 @@
       const res = await fetch(`${API_BASE}${path}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        referrerPolicy: 'no-referrer'
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -157,14 +159,17 @@
     async function loadSites() {
       const data = await apiGet(`/repos/${REPO}/contents/${FILE_PATH}`);
       fileSha = data.sha;
-      const content = atob(data.content.replace(/\n/g, ''));
+      const binary = atob(data.content.replace(/\n/g, ''));
+      const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+      const content = new TextDecoder().decode(bytes);
       sites = JSON.parse(content);
       return sites;
     }
 
     async function saveSites() {
       const json = JSON.stringify(sites, null, 2) + '\n';
-      const content = btoa(unescape(encodeURIComponent(json)));
+      const bytes = new TextEncoder().encode(json);
+      const content = btoa(String.fromCharCode(...bytes));
       const data = await apiPut(`/repos/${REPO}/contents/${FILE_PATH}`, {
         message: 'Update sites.json via editor',
         content: content,
@@ -192,18 +197,25 @@
       return new Promise(resolve => {
         const overlay = document.createElement('div');
         overlay.className = 'overlay';
-        overlay.innerHTML = `
-          <div class="dialog">
-            <h3>${title}</h3>
-            <p>${message}</p>
-            <div class="dialog-actions">
-              <button id="dialog-cancel">Cancel</button>
-              <button class="danger" id="dialog-confirm">Delete</button>
-            </div>
-          </div>`;
+        const dialog = document.createElement('div');
+        dialog.className = 'dialog';
+        const h3 = document.createElement('h3');
+        h3.textContent = title;
+        const p = document.createElement('p');
+        p.textContent = message;
+        const actions = document.createElement('div');
+        actions.className = 'dialog-actions';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.onclick = () => { overlay.remove(); resolve(false); };
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'danger';
+        confirmBtn.textContent = 'Delete';
+        confirmBtn.onclick = () => { overlay.remove(); resolve(true); };
+        actions.append(cancelBtn, confirmBtn);
+        dialog.append(h3, p, actions);
+        overlay.appendChild(dialog);
         document.body.appendChild(overlay);
-        overlay.querySelector('#dialog-cancel').onclick = () => { overlay.remove(); resolve(false); };
-        overlay.querySelector('#dialog-confirm').onclick = () => { overlay.remove(); resolve(true); };
         overlay.onclick = (e) => { if (e.target === overlay) { overlay.remove(); resolve(false); } };
       });
     }
@@ -226,7 +238,7 @@
             <div class="site-header">
               <div>
                 <div class="site-name">${esc(site.name)}</div>
-                <div class="site-url"><a href="${esc(site.url)}" target="_blank" rel="noopener">${esc(site.url)}</a></div>
+                <div class="site-url"><a href="${safeHref(site.url)}" target="_blank" rel="noopener">${esc(site.url)}</a></div>
               </div>
               <div class="site-actions">
                 <button onclick="editSite(${i})">Edit</button>
@@ -269,6 +281,12 @@
       return el.innerHTML;
     }
 
+    function safeHref(url) {
+      try { const u = new URL(url); if (u.protocol === 'https:' || u.protocol === 'http:') return esc(url); }
+      catch {}
+      return '#';
+    }
+
     // --- CRUD Actions ---
     function addSite() {
       sites.push({ name: '', url: '', watch: '' });
@@ -284,6 +302,11 @@
       document.getElementById('edit-name').focus();
     }
 
+    function isValidUrl(str) {
+      try { const u = new URL(str); return u.protocol === 'https:' || u.protocol === 'http:'; }
+      catch { return false; }
+    }
+
     function saveEdit(i) {
       const name = document.getElementById('edit-name').value.trim();
       const url = document.getElementById('edit-url').value.trim();
@@ -291,6 +314,10 @@
 
       if (!name || !url || !watch) {
         showToast('All fields are required', 'error');
+        return;
+      }
+      if (!isValidUrl(url)) {
+        showToast('URL must be a valid http:// or https:// address', 'error');
         return;
       }
 
