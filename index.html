@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+  <title>Site Checker Editor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
+    a { color: #58a6ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button { cursor: pointer; font-family: inherit; font-size: 14px; border: 1px solid #30363d; border-radius: 6px; padding: 6px 14px; background: #21262d; color: #c9d1d9; transition: background 0.15s; }
+    button:hover { background: #30363d; }
+    button.primary { background: #238636; border-color: #238636; color: #fff; }
+    button.primary:hover { background: #2ea043; }
+    button.danger { background: #da3633; border-color: #da3633; color: #fff; }
+    button.danger:hover { background: #f85149; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    input, textarea { font-family: inherit; font-size: 14px; background: #0d1117; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; width: 100%; }
+    input:focus, textarea:focus { outline: none; border-color: #58a6ff; box-shadow: 0 0 0 3px rgba(88,166,255,0.15); }
+    textarea { resize: vertical; min-height: 60px; }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #21262d; margin-bottom: 24px; }
+    header h1 { font-size: 20px; font-weight: 600; }
+
+    /* Auth screen */
+    #auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; }
+    #auth-screen h2 { font-size: 24px; margin-bottom: 8px; }
+    #auth-screen p { color: #8b949e; font-size: 14px; max-width: 400px; text-align: center; }
+    .auth-form { display: flex; gap: 8px; width: 100%; max-width: 500px; }
+    .auth-form input { flex: 1; }
+    .auth-error { color: #f85149; font-size: 13px; }
+    .auth-options { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #8b949e; }
+    .auth-options input[type="checkbox"] { width: auto; }
+
+    /* Editor screen */
+    #editor-screen { display: none; }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+    .toolbar .spacer { flex: 1; }
+    .unsaved-badge { background: #d29922; color: #0d1117; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-left: 6px; }
+
+    /* Site cards */
+    .site-card { border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 12px; background: #161b22; }
+    .site-card.editing { border-color: #58a6ff; }
+    .site-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+    .site-name { font-size: 16px; font-weight: 600; color: #f0f6fc; }
+    .site-url { font-size: 13px; color: #8b949e; word-break: break-all; }
+    .site-watch { font-size: 14px; color: #c9d1d9; margin-top: 8px; white-space: pre-wrap; }
+    .site-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .site-actions button { font-size: 12px; padding: 4px 10px; }
+
+    /* Edit form inside card */
+    .edit-form { display: flex; flex-direction: column; gap: 10px; }
+    .edit-form label { font-size: 12px; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+    .edit-form .field { display: flex; flex-direction: column; gap: 4px; }
+    .edit-form .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 100; animation: fadeIn 0.2s; }
+    .toast.success { background: #238636; color: #fff; }
+    .toast.error { background: #da3633; color: #fff; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 48px 20px; color: #8b949e; }
+    .empty-state p { margin-bottom: 16px; }
+
+    /* Confirm dialog */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 50; }
+    .dialog { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; }
+    .dialog h3 { margin-bottom: 12px; }
+    .dialog p { color: #8b949e; font-size: 14px; margin-bottom: 20px; }
+    .dialog .dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="auth-screen">
+      <h2>Site Checker Editor</h2>
+      <p>Enter your GitHub Personal Access Token to manage your monitored sites. The token is stored only in your browser.</p>
+      <div class="auth-form">
+        <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+        <button class="primary" id="connect-btn">Connect</button>
+      </div>
+      <div class="auth-options">
+        <input type="checkbox" id="remember-me" checked>
+        <label for="remember-me">Remember me</label>
+      </div>
+      <div class="auth-error" id="auth-error"></div>
+    </div>
+
+    <div id="editor-screen">
+      <header>
+        <h1>Site Checker Editor</h1>
+        <button id="disconnect-btn">Disconnect</button>
+      </header>
+      <div class="toolbar">
+        <button class="primary" id="add-btn">+ Add Site</button>
+        <div class="spacer"></div>
+        <button class="primary" id="save-btn" disabled>Save<span class="unsaved-badge" id="unsaved-badge" style="display:none">Unsaved</span></button>
+      </div>
+      <div id="sites-list"></div>
+    </div>
+  </div>
+
+  <script>
+    const REPO = 'filip-savic/site-checker';
+    const FILE_PATH = 'sites.json';
+    const API_BASE = 'https://api.github.com';
+
+    let token = '';
+    let sites = [];
+    let fileSha = '';
+    let hasUnsaved = false;
+    let editingIndex = -1;
+
+    // --- Storage ---
+    function getStoredToken() {
+      return localStorage.getItem('sc-token') || sessionStorage.getItem('sc-token') || '';
+    }
+    function storeToken(t, remember) {
+      if (remember) {
+        localStorage.setItem('sc-token', t);
+      } else {
+        sessionStorage.setItem('sc-token', t);
+      }
+    }
+    function clearToken() {
+      localStorage.removeItem('sc-token');
+      sessionStorage.removeItem('sc-token');
+    }
+
+    // --- GitHub API ---
+    async function apiGet(path) {
+      const res = await fetch(`${API_BASE}${path}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' }
+      });
+      if (!res.ok) throw new Error(`${res.status}`);
+      return res.json();
+    }
+
+    async function apiPut(path, body) {
+      const res = await fetch(`${API_BASE}${path}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(`${res.status}: ${err.message || 'Unknown error'}`);
+      }
+      return res.json();
+    }
+
+    async function loadSites() {
+      const data = await apiGet(`/repos/${REPO}/contents/${FILE_PATH}`);
+      fileSha = data.sha;
+      const content = atob(data.content.replace(/\n/g, ''));
+      sites = JSON.parse(content);
+      return sites;
+    }
+
+    async function saveSites() {
+      const json = JSON.stringify(sites, null, 2) + '\n';
+      const content = btoa(unescape(encodeURIComponent(json)));
+      const data = await apiPut(`/repos/${REPO}/contents/${FILE_PATH}`, {
+        message: 'Update sites.json via editor',
+        content: content,
+        sha: fileSha
+      });
+      fileSha = data.content.sha;
+    }
+
+    // --- UI Helpers ---
+    function showToast(msg, type = 'success') {
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    function setUnsaved(val) {
+      hasUnsaved = val;
+      document.getElementById('save-btn').disabled = !val;
+      document.getElementById('unsaved-badge').style.display = val ? 'inline' : 'none';
+    }
+
+    function confirm(title, message) {
+      return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.className = 'overlay';
+        overlay.innerHTML = `
+          <div class="dialog">
+            <h3>${title}</h3>
+            <p>${message}</p>
+            <div class="dialog-actions">
+              <button id="dialog-cancel">Cancel</button>
+              <button class="danger" id="dialog-confirm">Delete</button>
+            </div>
+          </div>`;
+        document.body.appendChild(overlay);
+        overlay.querySelector('#dialog-cancel').onclick = () => { overlay.remove(); resolve(false); };
+        overlay.querySelector('#dialog-confirm').onclick = () => { overlay.remove(); resolve(true); };
+        overlay.onclick = (e) => { if (e.target === overlay) { overlay.remove(); resolve(false); } };
+      });
+    }
+
+    // --- Rendering ---
+    function renderSites() {
+      const list = document.getElementById('sites-list');
+
+      if (sites.length === 0) {
+        list.innerHTML = '<div class="empty-state"><p>No sites configured yet.</p><button class="primary" onclick="addSite()">+ Add your first site</button></div>';
+        return;
+      }
+
+      list.innerHTML = sites.map((site, i) => {
+        if (i === editingIndex) {
+          return renderEditCard(site, i);
+        }
+        return `
+          <div class="site-card" data-index="${i}">
+            <div class="site-header">
+              <div>
+                <div class="site-name">${esc(site.name)}</div>
+                <div class="site-url"><a href="${esc(site.url)}" target="_blank" rel="noopener">${esc(site.url)}</a></div>
+              </div>
+              <div class="site-actions">
+                <button onclick="editSite(${i})">Edit</button>
+                <button onclick="copySite(${i})">Copy</button>
+                <button onclick="deleteSite(${i})">Delete</button>
+              </div>
+            </div>
+            <div class="site-watch">${esc(site.watch)}</div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderEditCard(site, i) {
+      return `
+        <div class="site-card editing" data-index="${i}">
+          <div class="edit-form">
+            <div class="field">
+              <label>Name</label>
+              <input type="text" id="edit-name" value="${esc(site.name)}">
+            </div>
+            <div class="field">
+              <label>URL</label>
+              <input type="url" id="edit-url" value="${esc(site.url)}">
+            </div>
+            <div class="field">
+              <label>Watch Instructions</label>
+              <textarea id="edit-watch" rows="3">${esc(site.watch)}</textarea>
+            </div>
+            <div class="form-actions">
+              <button onclick="cancelEdit()">Cancel</button>
+              <button class="primary" onclick="saveEdit(${i})">Done</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function esc(str) {
+      const el = document.createElement('span');
+      el.textContent = str || '';
+      return el.innerHTML;
+    }
+
+    // --- CRUD Actions ---
+    function addSite() {
+      sites.push({ name: '', url: '', watch: '' });
+      editingIndex = sites.length - 1;
+      setUnsaved(true);
+      renderSites();
+      document.getElementById('edit-name').focus();
+    }
+
+    function editSite(i) {
+      editingIndex = i;
+      renderSites();
+      document.getElementById('edit-name').focus();
+    }
+
+    function saveEdit(i) {
+      const name = document.getElementById('edit-name').value.trim();
+      const url = document.getElementById('edit-url').value.trim();
+      const watch = document.getElementById('edit-watch').value.trim();
+
+      if (!name || !url || !watch) {
+        showToast('All fields are required', 'error');
+        return;
+      }
+
+      sites[i] = { name, url, watch };
+      editingIndex = -1;
+      setUnsaved(true);
+      renderSites();
+    }
+
+    function cancelEdit() {
+      // If it's a new empty entry, remove it
+      if (editingIndex >= 0) {
+        const site = sites[editingIndex];
+        if (!site.name && !site.url && !site.watch) {
+          sites.splice(editingIndex, 1);
+        }
+      }
+      editingIndex = -1;
+      renderSites();
+    }
+
+    function copySite(i) {
+      const copy = { ...sites[i], name: sites[i].name + ' (copy)' };
+      sites.splice(i + 1, 0, copy);
+      setUnsaved(true);
+      renderSites();
+    }
+
+    async function deleteSite(i) {
+      const ok = await confirm('Delete site', `Remove "${sites[i].name}" from monitoring?`);
+      if (!ok) return;
+      sites.splice(i, 1);
+      setUnsaved(true);
+      renderSites();
+    }
+
+    // --- Auth ---
+    async function connect() {
+      const input = document.getElementById('token-input');
+      const error = document.getElementById('auth-error');
+      const btn = document.getElementById('connect-btn');
+      const remember = document.getElementById('remember-me').checked;
+
+      token = input.value.trim();
+      if (!token) { error.textContent = 'Please enter a token.'; return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Connecting...';
+      error.textContent = '';
+
+      try {
+        await loadSites();
+        storeToken(token, remember);
+        showEditor();
+      } catch (e) {
+        if (e.message.startsWith('401')) {
+          error.textContent = 'Invalid token. Check that it has Contents read/write permission.';
+        } else if (e.message.startsWith('404')) {
+          error.textContent = 'Repository or file not found. Check token repository access.';
+        } else {
+          error.textContent = `Connection failed: ${e.message}`;
+        }
+        token = '';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Connect';
+      }
+    }
+
+    function disconnect() {
+      if (hasUnsaved && !window.confirm('You have unsaved changes. Disconnect anyway?')) return;
+      token = '';
+      sites = [];
+      fileSha = '';
+      editingIndex = -1;
+      setUnsaved(false);
+      clearToken();
+      document.getElementById('auth-screen').style.display = 'flex';
+      document.getElementById('editor-screen').style.display = 'none';
+      document.getElementById('token-input').value = '';
+    }
+
+    function showEditor() {
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('editor-screen').style.display = 'block';
+      renderSites();
+    }
+
+    // --- Save to GitHub ---
+    async function handleSave() {
+      const btn = document.getElementById('save-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      try {
+        await saveSites();
+        setUnsaved(false);
+        showToast('Saved and committed to GitHub');
+      } catch (e) {
+        if (e.message.startsWith('409')) {
+          showToast('Conflict: file was modified externally. Reloading...', 'error');
+          await loadSites();
+          renderSites();
+        } else if (e.message.startsWith('401')) {
+          showToast('Token expired or revoked. Please reconnect.', 'error');
+          disconnect();
+        } else {
+          showToast(`Save failed: ${e.message}`, 'error');
+        }
+      } finally {
+        btn.textContent = 'Save';
+        btn.querySelector('.unsaved-badge')?.remove();
+        const badge = document.getElementById('unsaved-badge');
+        btn.appendChild(badge);
+      }
+    }
+
+    // --- Init ---
+    document.getElementById('connect-btn').addEventListener('click', connect);
+    document.getElementById('token-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') connect(); });
+    document.getElementById('disconnect-btn').addEventListener('click', disconnect);
+    document.getElementById('save-btn').addEventListener('click', handleSave);
+    document.getElementById('add-btn').addEventListener('click', addSite);
+
+    // Warn on unsaved changes
+    window.addEventListener('beforeunload', (e) => {
+      if (hasUnsaved) { e.preventDefault(); e.returnValue = ''; }
+    });
+
+    // Auto-connect if token stored
+    (async () => {
+      const stored = getStoredToken();
+      if (stored) {
+        token = stored;
+        try {
+          await loadSites();
+          showEditor();
+        } catch {
+          clearToken();
+          token = '';
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
