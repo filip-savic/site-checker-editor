@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,51 +7,84 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Dashboard</title>
   <style>
+    [data-theme="light"] {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f6f8fa;
+      --bg-tertiary: #e1e4e8;
+      --text-primary: #24292f;
+      --text-secondary: #57606a;
+      --text-heading: #1f2328;
+      --border: #d0d7de;
+      --link: #0969da;
+      --btn-bg: #f3f4f6;
+      --btn-hover: #e1e4e8;
+      --focus-ring: rgba(9,105,218,0.15);
+      --unsaved-bg: #bf8700;
+      --unsaved-text: #ffffff;
+      --overlay-bg: rgba(0,0,0,0.3);
+    }
+    [data-theme="dark"] {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --text-primary: #c9d1d9;
+      --text-secondary: #8b949e;
+      --text-heading: #f0f6fc;
+      --border: #30363d;
+      --link: #58a6ff;
+      --btn-bg: #21262d;
+      --btn-hover: #30363d;
+      --focus-ring: rgba(88,166,255,0.15);
+      --unsaved-bg: #d29922;
+      --unsaved-text: #0d1117;
+      --overlay-bg: rgba(0,0,0,0.6);
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
-    a { color: #58a6ff; text-decoration: none; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+    a { color: var(--link); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    button { cursor: pointer; font-family: inherit; font-size: 14px; border: 1px solid #30363d; border-radius: 6px; padding: 6px 14px; background: #21262d; color: #c9d1d9; transition: background 0.15s; }
-    button:hover { background: #30363d; }
+    button { cursor: pointer; font-family: inherit; font-size: 14px; border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; background: var(--btn-bg); color: var(--text-primary); transition: background 0.15s; }
+    button:hover { background: var(--btn-hover); }
     button.primary { background: #238636; border-color: #238636; color: #fff; }
     button.primary:hover { background: #2ea043; }
     button.danger { background: #da3633; border-color: #da3633; color: #fff; }
     button.danger:hover { background: #f85149; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
-    input, textarea { font-family: inherit; font-size: 14px; background: #0d1117; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; width: 100%; }
-    input:focus, textarea:focus { outline: none; border-color: #58a6ff; box-shadow: 0 0 0 3px rgba(88,166,255,0.15); }
+    input, textarea { font-family: inherit; font-size: 14px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; width: 100%; }
+    input:focus, textarea:focus { outline: none; border-color: var(--link); box-shadow: 0 0 0 3px var(--focus-ring); }
     textarea { resize: vertical; min-height: 60px; }
 
     .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #21262d; margin-bottom: 24px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--bg-tertiary); margin-bottom: 24px; }
     header h1 { font-size: 20px; font-weight: 600; }
 
     #auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; }
     #auth-screen h2 { font-size: 24px; margin-bottom: 8px; }
-    #auth-screen p { color: #8b949e; font-size: 14px; max-width: 440px; text-align: center; }
+    #auth-screen p { color: var(--text-secondary); font-size: 14px; max-width: 440px; text-align: center; }
     .auth-form { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 500px; }
     .auth-row { display: flex; gap: 8px; }
     .auth-row input { flex: 1; }
     .auth-error { color: #f85149; font-size: 13px; }
-    .auth-options { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #8b949e; }
+    .auth-options { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
     .auth-options input[type="checkbox"] { width: auto; }
 
     #editor-screen { display: none; }
     .toolbar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
     .toolbar .spacer { flex: 1; }
-    .unsaved-badge { background: #d29922; color: #0d1117; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-left: 6px; }
+    .unsaved-badge { background: var(--unsaved-bg); color: var(--unsaved-text); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-left: 6px; }
 
-    .site-card { border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 12px; background: #161b22; }
-    .site-card.editing { border-color: #58a6ff; }
+    .site-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; background: var(--bg-secondary); }
+    .site-card.editing { border-color: var(--link); }
     .site-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
-    .site-name { font-size: 16px; font-weight: 600; color: #f0f6fc; }
-    .site-url { font-size: 13px; color: #8b949e; word-break: break-all; }
-    .site-watch { font-size: 14px; color: #c9d1d9; margin-top: 8px; white-space: pre-wrap; }
+    .site-name { font-size: 16px; font-weight: 600; color: var(--text-heading); }
+    .site-url { font-size: 13px; color: var(--text-secondary); word-break: break-all; }
+    .site-watch { font-size: 14px; color: var(--text-primary); margin-top: 8px; white-space: pre-wrap; }
     .site-actions { display: flex; gap: 6px; flex-shrink: 0; }
     .site-actions button { font-size: 12px; padding: 4px 10px; }
 
     .edit-form { display: flex; flex-direction: column; gap: 10px; }
-    .edit-form label { font-size: 12px; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+    .edit-form label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
     .edit-form .field { display: flex; flex-direction: column; gap: 4px; }
     .edit-form .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
 
@@ -60,17 +93,21 @@
     .toast.error { background: #da3633; color: #fff; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    .empty-state { text-align: center; padding: 48px 20px; color: #8b949e; }
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--text-secondary); }
     .empty-state p { margin-bottom: 16px; }
 
-    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 50; }
-    .dialog { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; }
+    .overlay { position: fixed; inset: 0; background: var(--overlay-bg); display: flex; align-items: center; justify-content: center; z-index: 50; }
+    .dialog { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; }
     .dialog h3 { margin-bottom: 12px; }
-    .dialog p { color: #8b949e; font-size: 14px; margin-bottom: 20px; }
+    .dialog p { color: var(--text-secondary); font-size: 14px; margin-bottom: 20px; }
     .dialog .dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+    .theme-toggle { position: fixed; top: 16px; right: 20px; z-index: 10; font-size: 13px; padding: 4px 10px; }
   </style>
 </head>
 <body>
+  <button class="theme-toggle" id="theme-toggle"></button>
+
   <div class="container">
     <div id="auth-screen">
       <h2>Dashboard</h2>
@@ -107,6 +144,7 @@
   <script>
     const API_BASE = 'https://api.github.com';
     const SK = '_dt';
+    const TK = '_theme';
 
     let token = '';
     let repo = '';
@@ -115,6 +153,25 @@
     let fileSha = '';
     let hasUnsaved = false;
     let editingIndex = -1;
+
+    // Theme
+    function initTheme() {
+      const saved = localStorage.getItem(TK) || 'light';
+      document.documentElement.setAttribute('data-theme', saved);
+      updateThemeButton(saved);
+    }
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem(TK, next);
+      updateThemeButton(next);
+    }
+    function updateThemeButton(theme) {
+      document.getElementById('theme-toggle').textContent = theme === 'dark' ? '\u2600\uFE0F Light' : '\uD83C\uDF19 Dark';
+    }
+    initTheme();
+    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
 
     function getStored() {
       try {
