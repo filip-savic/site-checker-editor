@@ -82,6 +82,9 @@
     .site-watch { font-size: 14px; color: var(--text-primary); margin-top: 8px; white-space: pre-wrap; }
     .site-actions { display: flex; gap: 6px; flex-shrink: 0; }
     .site-actions button { font-size: 12px; padding: 4px 10px; }
+    .site-card[draggable="true"] { cursor: grab; }
+    .site-card.dragging { opacity: 0.4; }
+    .site-card.drag-over { border-top: 2px solid var(--link); margin-top: -2px; }
 
     .edit-form { display: flex; flex-direction: column; gap: 10px; }
     .edit-form label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -287,7 +290,7 @@
           return renderEditCard(site, i);
         }
         return `
-          <div class="site-card" data-index="${i}">
+          <div class="site-card" data-index="${i}" draggable="true">
             <div class="site-header">
               <div>
                 <div class="site-name">${esc(site.name)}</div>
@@ -302,6 +305,46 @@
             <div class="site-watch">${esc(site.watch)}</div>
           </div>`;
       }).join('');
+      initDragAndDrop();
+    }
+
+    let dragFromIndex = -1;
+
+    function initDragAndDrop() {
+      const cards = document.querySelectorAll('.site-card[draggable="true"]');
+      cards.forEach(card => {
+        card.addEventListener('dragstart', (e) => {
+          dragFromIndex = parseInt(card.dataset.index);
+          card.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        card.addEventListener('dragend', () => {
+          card.classList.remove('dragging');
+          document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+          dragFromIndex = -1;
+        });
+        card.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+          if (parseInt(card.dataset.index) !== dragFromIndex) {
+            card.classList.add('drag-over');
+          }
+        });
+        card.addEventListener('dragleave', () => {
+          card.classList.remove('drag-over');
+        });
+        card.addEventListener('drop', (e) => {
+          e.preventDefault();
+          card.classList.remove('drag-over');
+          const toIndex = parseInt(card.dataset.index);
+          if (dragFromIndex === -1 || dragFromIndex === toIndex) return;
+          const [moved] = sites.splice(dragFromIndex, 1);
+          sites.splice(toIndex, 0, moved);
+          setUnsaved(true);
+          renderSites();
+        });
+      });
     }
 
     function renderEditCard(site, i) {
