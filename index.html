@@ -507,7 +507,7 @@
     async function handleSave() {
       const btn = document.getElementById('save-btn');
       btn.disabled = true;
-      btn.textContent = 'Saving...';
+      btn.firstChild.textContent = 'Saving... ';
 
       try {
         await saveSites();
@@ -525,10 +525,7 @@
           showToast(`Save failed: ${e.message}`, 'error');
         }
       } finally {
-        btn.textContent = 'Save';
-        btn.querySelector('.unsaved-badge')?.remove();
-        const badge = document.getElementById('unsaved-badge');
-        btn.appendChild(badge);
+        btn.firstChild.textContent = 'Save';
       }
     }
 
