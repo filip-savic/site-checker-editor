@@ -56,7 +56,7 @@
     textarea { resize: vertical; min-height: 60px; }
 
     .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--bg-tertiary); margin-bottom: 24px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 80px 16px 0; border-bottom: 1px solid var(--bg-tertiary); margin-bottom: 24px; }
     header h1 { font-size: 20px; font-weight: 600; }
 
     #auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; }
@@ -293,7 +293,7 @@
           <div class="site-card" data-index="${i}" draggable="true">
             <div class="site-header">
               <div>
-                <div class="site-name">${esc(site.name)}</div>
+                <div class="site-name">${esc(site.name || site.url)}</div>
                 <div class="site-url"><a href="${safeHref(site.url)}" target="_blank" rel="noopener">${esc(site.url)}</a></div>
               </div>
               <div class="site-actions">
@@ -407,8 +407,8 @@
       const url = document.getElementById('edit-url').value.trim();
       const watch = document.getElementById('edit-watch').value.trim();
 
-      if (!name || !url || !watch) {
-        showToast('All fields are required', 'error');
+      if (!url) {
+        showToast('URL is required', 'error');
         return;
       }
       if (!isValidUrl(url)) {
@@ -425,7 +425,7 @@
     function cancelEdit() {
       if (editingIndex >= 0) {
         const site = sites[editingIndex];
-        if (!site.name && !site.url && !site.watch) {
+        if (!site.url) {
           sites.splice(editingIndex, 1);
         }
       }
