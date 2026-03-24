@@ -105,11 +105,13 @@
     .dialog p { color: var(--text-secondary); font-size: 14px; margin-bottom: 20px; }
     .dialog .dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
-    .theme-toggle { position: fixed; top: 16px; right: 20px; z-index: 10; font-size: 13px; padding: 4px 10px; }
+    .theme-toggle { position: absolute; top: 16px; right: 20px; z-index: 10; font-size: 13px; padding: 4px 10px; }
+    .save-floating { position: fixed; bottom: 20px; right: 20px; z-index: 10; font-size: 14px; padding: 8px 20px; }
   </style>
 </head>
 <body>
   <button class="theme-toggle" id="theme-toggle"></button>
+  <button class="primary save-floating" id="save-btn" disabled>Save<span class="unsaved-badge" id="unsaved-badge" style="display:none">Unsaved</span></button>
 
   <div class="container">
     <div id="auth-screen">
@@ -137,8 +139,6 @@
       </header>
       <div class="toolbar">
         <button class="primary" id="add-btn">+ Add Item</button>
-        <div class="spacer"></div>
-        <button class="primary" id="save-btn" disabled>Save<span class="unsaved-badge" id="unsaved-badge" style="display:none">Unsaved</span></button>
       </div>
       <div id="sites-list"></div>
     </div>
