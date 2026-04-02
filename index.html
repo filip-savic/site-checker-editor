@@ -19,9 +19,11 @@
       --btn-bg: #f3f4f6;
       --btn-hover: #e1e4e8;
       --focus-ring: rgba(9,105,218,0.15);
-      --unsaved-bg: #bf8700;
-      --unsaved-text: #ffffff;
       --overlay-bg: rgba(0,0,0,0.3);
+      --save-bg: #1a7f37;
+      --save-hover: #238636;
+      --save-shadow: rgba(27,31,36,0.15);
+      --card-hover: #f0f3f6;
     }
     [data-theme="dark"] {
       --bg-primary: #0d1117;
@@ -35,9 +37,11 @@
       --btn-bg: #21262d;
       --btn-hover: #30363d;
       --focus-ring: rgba(88,166,255,0.15);
-      --unsaved-bg: #d29922;
-      --unsaved-text: #0d1117;
       --overlay-bg: rgba(0,0,0,0.6);
+      --save-bg: #238636;
+      --save-hover: #2ea043;
+      --save-shadow: rgba(0,0,0,0.4);
+      --card-hover: #1c2128;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -56,9 +60,16 @@
     textarea { resize: vertical; min-height: 60px; }
 
     .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 80px 16px 0; border-bottom: 1px solid var(--bg-tertiary); margin-bottom: 24px; }
-    header h1 { font-size: 20px; font-weight: 600; }
 
+    /* Header */
+    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--bg-tertiary); margin-bottom: 24px; }
+    header h1 { font-size: 20px; font-weight: 600; }
+    .header-actions { display: flex; align-items: center; gap: 4px; }
+    .header-actions button { border: none; background: transparent; color: var(--text-secondary); padding: 6px 10px; font-size: 13px; border-radius: 6px; }
+    .header-actions button:hover { background: var(--btn-hover); color: var(--text-primary); }
+    .header-actions .separator { width: 1px; height: 16px; background: var(--border); margin: 0 4px; }
+
+    /* Auth */
     #auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; }
     #auth-screen h2 { font-size: 24px; margin-bottom: 8px; }
     #auth-screen p { color: var(--text-secondary); font-size: 14px; max-width: 440px; text-align: center; }
@@ -69,29 +80,62 @@
     .auth-options { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
     .auth-options input[type="checkbox"] { width: auto; }
 
+    /* Editor */
     #editor-screen { display: none; }
     .toolbar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
-    .toolbar .spacer { flex: 1; }
-    .unsaved-badge { background: var(--unsaved-bg); color: var(--unsaved-text); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-left: 6px; }
 
-    .site-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; background: var(--bg-secondary); }
+    /* Site cards */
+    .site-card { border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 8px; background: var(--bg-secondary); transition: border-color 0.15s; }
     .site-card.editing { border-color: var(--link); }
-    .site-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
-    .site-name { font-size: 16px; font-weight: 600; color: var(--text-heading); }
-    .site-url { font-size: 13px; color: var(--text-secondary); word-break: break-all; }
-    .site-watch { font-size: 14px; color: var(--text-primary); margin-top: 8px; white-space: pre-wrap; }
-    .site-actions { display: flex; gap: 6px; flex-shrink: 0; }
-    .site-actions button { font-size: 12px; padding: 4px 10px; }
     .site-card[draggable="true"] { cursor: grab; }
     .site-card.dragging { opacity: 0.4; }
     .site-card.drag-over { border-top: 2px solid var(--link); margin-top: -2px; }
 
+    .site-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .site-title-area { min-width: 0; flex: 1; }
+    .site-name-link { font-size: 15px; font-weight: 600; color: var(--text-heading); text-decoration: none; }
+    .site-name-link:hover { color: var(--link); text-decoration: underline; }
+    .site-url-preview { font-size: 12px; color: var(--text-secondary); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .site-watch { font-size: 13px; color: var(--text-secondary); margin-top: 8px; white-space: pre-wrap; line-height: 1.45; }
+
+    /* Card actions — three-dot menu */
+    .card-menu { position: relative; }
+    .card-menu-trigger { border: none; background: transparent; color: var(--text-secondary); font-size: 18px; padding: 2px 6px; border-radius: 4px; line-height: 1; letter-spacing: 2px; }
+    .card-menu-trigger:hover { background: var(--btn-hover); color: var(--text-primary); }
+    .card-menu-dropdown { display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px var(--save-shadow); z-index: 20; min-width: 120px; overflow: hidden; }
+    .card-menu-dropdown.open { display: block; }
+    .card-menu-dropdown button { display: block; width: 100%; text-align: left; border: none; border-radius: 0; background: transparent; padding: 8px 14px; font-size: 13px; color: var(--text-primary); }
+    .card-menu-dropdown button:hover { background: var(--btn-hover); }
+    .card-menu-dropdown button.menu-danger { color: #da3633; }
+    .card-menu-dropdown button.menu-danger:hover { background: #da36330d; }
+
+    /* Edit form */
     .edit-form { display: flex; flex-direction: column; gap: 10px; }
     .edit-form label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
     .edit-form .field { display: flex; flex-direction: column; gap: 4px; }
     .edit-form .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
 
-    .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 100; animation: fadeIn 0.2s; }
+    /* Floating save */
+    .save-floating {
+      position: fixed; bottom: 24px; right: 24px; z-index: 10;
+      border: none; border-radius: 24px;
+      background: var(--save-bg); color: #fff;
+      font-size: 14px; font-weight: 600;
+      padding: 10px 22px;
+      box-shadow: 0 4px 14px var(--save-shadow);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.25s cubic-bezier(0.4,0,0.2,1), background 0.15s;
+      pointer-events: none;
+    }
+    .save-floating:hover { background: var(--save-hover); }
+    .save-floating.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
+    .save-floating .save-dot {
+      display: inline-block; width: 7px; height: 7px; background: #fff; border-radius: 50%; margin-right: 8px; opacity: 0.85;
+    }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 100; animation: fadeIn 0.2s; }
     .toast.success { background: #238636; color: #fff; }
     .toast.error { background: #da3633; color: #fff; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -104,14 +148,10 @@
     .dialog h3 { margin-bottom: 12px; }
     .dialog p { color: var(--text-secondary); font-size: 14px; margin-bottom: 20px; }
     .dialog .dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
-
-    .theme-toggle { position: absolute; top: 16px; right: 20px; z-index: 10; font-size: 13px; padding: 4px 10px; }
-    .save-floating { position: fixed; bottom: 20px; right: 20px; z-index: 10; font-size: 14px; padding: 8px 20px; }
   </style>
 </head>
 <body>
-  <button class="theme-toggle" id="theme-toggle"></button>
-  <button class="primary save-floating" id="save-btn" disabled>Save<span class="unsaved-badge" id="unsaved-badge" style="display:none">Unsaved</span></button>
+  <button class="save-floating" id="save-btn"><span class="save-dot"></span>Save</button>
 
   <div class="container">
     <div id="auth-screen">
@@ -135,7 +175,11 @@
     <div id="editor-screen">
       <header>
         <h1 id="editor-title">Dashboard</h1>
-        <button id="disconnect-btn">Disconnect</button>
+        <div class="header-actions">
+          <button id="theme-toggle"></button>
+          <span class="separator"></span>
+          <button id="disconnect-btn">Disconnect</button>
+        </div>
       </header>
       <div class="toolbar">
         <button class="primary" id="add-btn">+ Add Item</button>
@@ -156,6 +200,7 @@
     let fileSha = '';
     let hasUnsaved = false;
     let editingIndex = -1;
+    let openMenuIndex = -1;
 
     // Theme
     function initTheme() {
@@ -171,10 +216,33 @@
       updateThemeButton(next);
     }
     function updateThemeButton(theme) {
-      document.getElementById('theme-toggle').textContent = theme === 'dark' ? '\u2600\uFE0F Light' : '\uD83C\uDF19 Dark';
+      document.getElementById('theme-toggle').textContent = theme === 'dark' ? 'Light' : 'Dark';
     }
     initTheme();
     document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
+    // Close open menus on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.card-menu')) {
+        closeMenus();
+      }
+    });
+
+    function closeMenus() {
+      openMenuIndex = -1;
+      document.querySelectorAll('.card-menu-dropdown.open').forEach(el => el.classList.remove('open'));
+    }
+
+    function toggleMenu(i, e) {
+      e.stopPropagation();
+      const wasOpen = openMenuIndex === i;
+      closeMenus();
+      if (!wasOpen) {
+        openMenuIndex = i;
+        const dropdown = document.querySelector(`.card-menu[data-index="${i}"] .card-menu-dropdown`);
+        if (dropdown) dropdown.classList.add('open');
+      }
+    }
 
     function getStored() {
       try {
@@ -246,8 +314,12 @@
 
     function setUnsaved(val) {
       hasUnsaved = val;
-      document.getElementById('save-btn').disabled = !val;
-      document.getElementById('unsaved-badge').style.display = val ? 'inline' : 'none';
+      const btn = document.getElementById('save-btn');
+      if (val) {
+        btn.classList.add('visible');
+      } else {
+        btn.classList.remove('visible');
+      }
     }
 
     function confirm(title, message) {
@@ -277,6 +349,17 @@
       });
     }
 
+    function truncateUrl(url) {
+      try {
+        const u = new URL(url);
+        const path = u.pathname === '/' ? '' : u.pathname;
+        const display = u.hostname + path;
+        return display.length > 60 ? display.substring(0, 57) + '...' : display;
+      } catch {
+        return url.length > 60 ? url.substring(0, 57) + '...' : url;
+      }
+    }
+
     function renderSites() {
       const list = document.getElementById('sites-list');
 
@@ -289,20 +372,27 @@
         if (i === editingIndex) {
           return renderEditCard(site, i);
         }
+        const displayName = site.name || truncateUrl(site.url);
+        const displayUrl = truncateUrl(site.url);
+        const watchHtml = site.watch ? `<div class="site-watch">${esc(site.watch)}</div>` : '';
+
         return `
           <div class="site-card" data-index="${i}" draggable="true">
             <div class="site-header">
-              <div>
-                <div class="site-name">${esc(site.name || site.url)}</div>
-                <div class="site-url"><a href="${safeHref(site.url)}" target="_blank" rel="noopener">${esc(site.url)}</a></div>
+              <div class="site-title-area">
+                <a class="site-name-link" href="${safeHref(site.url)}" target="_blank" rel="noopener" title="${esc(site.url)}">${esc(displayName)}</a>
+                ${site.name ? `<div class="site-url-preview" title="${esc(site.url)}">${esc(displayUrl)}</div>` : ''}
               </div>
-              <div class="site-actions">
-                <button onclick="editSite(${i})">Edit</button>
-                <button onclick="copySite(${i})">Copy</button>
-                <button onclick="deleteSite(${i})">Delete</button>
+              <div class="card-menu" data-index="${i}">
+                <button class="card-menu-trigger" onclick="toggleMenu(${i}, event)" aria-label="Actions">&middot;&middot;&middot;</button>
+                <div class="card-menu-dropdown">
+                  <button onclick="editSite(${i})">Edit</button>
+                  <button onclick="copySite(${i})">Duplicate</button>
+                  <button class="menu-danger" onclick="deleteSite(${i})">Delete</button>
+                </div>
               </div>
             </div>
-            <div class="site-watch">${esc(site.watch)}</div>
+            ${watchHtml}
           </div>`;
       }).join('');
       initDragAndDrop();
@@ -392,6 +482,7 @@
     }
 
     function editSite(i) {
+      closeMenus();
       editingIndex = i;
       renderSites();
       document.getElementById('edit-name').focus();
@@ -434,6 +525,7 @@
     }
 
     function copySite(i) {
+      closeMenus();
       const copy = { ...sites[i], name: sites[i].name + ' (copy)' };
       sites.splice(i + 1, 0, copy);
       setUnsaved(true);
@@ -441,7 +533,8 @@
     }
 
     async function deleteSite(i) {
-      const ok = await confirm('Delete item', `Remove "${sites[i].name}"?`);
+      closeMenus();
+      const ok = await confirm('Delete item', `Remove "${sites[i].name || sites[i].url}"?`);
       if (!ok) return;
       sites.splice(i, 1);
       setUnsaved(true);
@@ -506,8 +599,9 @@
 
     async function handleSave() {
       const btn = document.getElementById('save-btn');
-      btn.disabled = true;
-      btn.firstChild.textContent = 'Saving... ';
+      const origText = btn.innerHTML;
+      btn.innerHTML = 'Saving...';
+      btn.style.pointerEvents = 'none';
 
       try {
         await saveSites();
@@ -525,7 +619,8 @@
           showToast(`Save failed: ${e.message}`, 'error');
         }
       } finally {
-        btn.firstChild.textContent = 'Save';
+        btn.innerHTML = '<span class="save-dot"></span>Save';
+        btn.style.pointerEvents = '';
       }
     }
 
